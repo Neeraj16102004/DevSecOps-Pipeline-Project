@@ -9,29 +9,52 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # ✅ Checkout
+      # ---------------------------
+      # Checkout Code
+      # ---------------------------
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      # ✅ Setup Node
+      # ---------------------------
+      # Setup Node
+      # ---------------------------
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
           node-version: 18
 
-      # ✅ Install dependencies
+      # ---------------------------
+      # Install Dependencies
+      # ---------------------------
       - name: Install Dependencies
         run: npm install
 
-      # ✅ Dependency Scan
-      - name: npm audit
+      # ---------------------------
+      # SCA - Dependency Scan
+      # ---------------------------
+      - name: Dependency Scan (npm audit)
         run: npm audit --audit-level=high || true
 
-      # ✅ Build Docker image
+      # ---------------------------
+      # SAST - SonarQube Scan
+      # ---------------------------
+      - name: SonarQube Scan
+        run: |
+          docker run --rm \
+            -e SONAR_HOST_URL="http://host.docker.internal:9000" \
+            -e SONAR_LOGIN="${{ secrets.SONAR_TOKEN }}" \
+            -v "${{ github.workspace }}:/usr/src" \
+            sonarsource/sonar-scanner-cli
+
+      # ---------------------------
+      # Build Docker Image
+      # ---------------------------
       - name: Build Docker Image
         run: docker build -t nodegoat-secure .
 
-      # ✅ Install Trivy
+      # ---------------------------
+      # Install Trivy
+      # ---------------------------
       - name: Install Trivy
         run: |
           sudo apt-get update
@@ -41,7 +64,15 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y trivy
 
-      # ✅ Scan Docker Image
-      - name: Scan Docker Image
+      # ---------------------------
+      # Container Scan
+      # ---------------------------
+      - name: Scan Docker Image (Trivy)
         run: |
-          trivy image --severity HIGH,CRITICAL nodegoat-secure
+          trivy image --severity HIGH,CRITICAL --exit-code 0 nodegoat-secure
+
+      # ---------------------------
+      # Pipeline Completed
+      # ---------------------------
+      - name: Done
+        run: echo "DevSecOps Pipeline Completed Successfully"

@@ -9,11 +9,11 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # ✅ Latest checkout
+      # ✅ Checkout
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      # ✅ Latest Node setup (no matrix)
+      # ✅ Setup Node
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
@@ -31,10 +31,17 @@ jobs:
       - name: Build Docker Image
         run: docker build -t nodegoat-secure .
 
-      # ✅ Trivy Scan (direct docker method)
-      - name: Scan Image with Trivy
+      # ✅ Install Trivy
+      - name: Install Trivy
         run: |
-          docker run --rm aquasec/trivy:0.50.1 image \
-            --severity HIGH,CRITICAL \
-            --exit-code 0 \
-            nodegoat-secure
+          sudo apt-get update
+          sudo apt-get install -y wget apt-transport-https gnupg lsb-release
+          wget -qO - https://aquasecurity.github.io/trivy-repo/deb/public.key | sudo apt-key add -
+          echo deb https://aquasecurity.github.io/trivy-repo/deb $(lsb_release -sc) main | sudo tee /etc/apt/sources.list.d/trivy.list
+          sudo apt-get update
+          sudo apt-get install -y trivy
+
+      # ✅ Scan Docker Image
+      - name: Scan Docker Image
+        run: |
+          trivy image --severity HIGH,CRITICAL nodegoat-secure

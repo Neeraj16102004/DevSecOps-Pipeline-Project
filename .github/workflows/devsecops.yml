@@ -2,55 +2,36 @@ name: DevSecOps Pipeline
 
 on:
   push:
-    branches: [ "main" ]
+    branches: ["main"]
 
 jobs:
-  security-pipeline:
+  security:
     runs-on: ubuntu-latest
 
     steps:
-    # ✅ Checkout (latest)
-    - name: Checkout Code
-      uses: actions/checkout@v4
+      # ✅ Latest checkout
+      - name: Checkout Code
+        uses: actions/checkout@v4
 
-    # ✅ Setup Node (latest)
-    - name: Setup Node
-      uses: actions/setup-node@v4
-      with:
-        node-version: 18
-        cache: 'npm'
+      # ✅ Latest Node setup (no matrix)
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
 
-    # ✅ Install dependencies
-    - name: Install Dependencies
-      run: npm install
+      # ✅ Install dependencies
+      - name: Install Dependencies
+        run: npm install
 
-    # ---------------------------
-    # SCA (Dependency Scan)
-    # ---------------------------
-    - name: Dependency Scan
-      run: |
-        npm audit --audit-level=high || true
+      # ✅ Dependency Scan
+      - name: npm audit
+        run: npm audit --audit-level=high || true
 
-    # ---------------------------
-    # Build Docker Image
-    # ---------------------------
-    - name: Build Docker Image
-      run: docker build -t nodegoat-secure .
+      # ✅ Build Docker image
+      - name: Build Docker Image
+        run: docker build -t nodegoat-secure .
 
-    # ---------------------------
-    # Install Trivy
-    # ---------------------------
-    - name: Install Trivy
-      run: |
-        sudo apt-get update
-        sudo apt-get install -y wget apt-transport-https gnupg lsb-release
-        wget -qO - https://aquasecurity.github.io/trivy-repo/deb/public.key | sudo apt-key add -
-        echo deb https://aquasecurity.github.io/trivy-repo/deb $(lsb_release -sc) main | sudo tee /etc/apt/sources.list.d/trivy.list
-        sudo apt-get update
-        sudo apt-get install -y trivy
-
-    # ---------------------------
-    # Container Scan
-    # ---------------------------
-    - name: Scan Docker Image
-      run: trivy image nodegoat-secure
+      # ✅ Trivy Scan (direct docker method)
+      - name: Scan Image with Trivy
+        run: |
+          docker run --rm aquasec/trivy:latest image nodegoat-secure

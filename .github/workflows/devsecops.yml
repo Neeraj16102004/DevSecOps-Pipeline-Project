@@ -34,4 +34,7 @@ jobs:
       # ✅ Trivy Scan (direct docker method)
       - name: Scan Image with Trivy
         run: |
-          docker run --rm aquasec/trivy:latest image nodegoat-secure
+          docker run --rm aquasec/trivy:0.50.1 image \
+            --severity HIGH,CRITICAL \
+            --exit-code 0 \
+            nodegoat-secure

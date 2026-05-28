@@ -11,7 +11,8 @@ services:
       - "4000:4000"
 
   mongo:
-    image: mongo:3.6
+    image: mongo:3.5   
     user: mongodb
     expose:
       - 27017
+
